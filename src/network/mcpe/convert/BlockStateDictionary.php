@@ -28,11 +28,13 @@ namespace pocketmine\network\mcpe\convert;
 
 use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\data\bedrock\block\BlockStateDeserializeException;
+use pocketmine\data\bedrock\block\BlockStateNames;
 use pocketmine\data\bedrock\block\BlockTypeNames;
 use pocketmine\nbt\LittleEndianNbtSerializer;
 use pocketmine\nbt\NbtDataException;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\ListTag;
+use pocketmine\nbt\tag\Tag;
 use pocketmine\nbt\TreeRoot;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\utils\AssumptionFailedError;
@@ -57,6 +59,22 @@ use const JSON_THROW_ON_ERROR;
  * Handles translation of network block runtime IDs into blockstate data, and vice versa
  */
 final class BlockStateDictionary{
+	private const ORIENTATION_PROPERTIES = [
+		BlockStateNames::DIRECTION => true,
+		BlockStateNames::FACING_DIRECTION => true,
+		BlockStateNames::GROUND_SIGN_DIRECTION => true,
+		BlockStateNames::MC_BLOCK_FACE => true,
+		BlockStateNames::MC_CARDINAL_DIRECTION => true,
+		BlockStateNames::MC_FACING_DIRECTION => true,
+		BlockStateNames::MC_VERTICAL_HALF => true,
+		BlockStateNames::PILLAR_AXIS => true,
+		BlockStateNames::RAIL_DIRECTION => true,
+		BlockStateNames::TORCH_FACING_DIRECTION => true,
+		BlockStateNames::UPPER_BLOCK_BIT => true,
+		BlockStateNames::UPSIDE_DOWN_BIT => true,
+		BlockStateNames::WEIRDO_DIRECTION => true,
+	];
+
 	/**
 	 * @var int[][]|int[]
 	 * @phpstan-var array<string, array<string, int>|int>
@@ -159,6 +177,41 @@ final class BlockStateDictionary{
 			is_int($lookup) => $lookup,
 			is_array($lookup) => $lookup[BlockStateDictionaryEntry::encodeStateProperties($data->getStates())] ?? null
 		};
+	}
+
+	/**
+	 * Searches for the state ID of the given block name whose properties match the given ones the most.
+	 * Returns null if the block doesn't exist in this dictionary.
+	 *
+	 * @param Tag[] $properties
+	 * @phpstan-param array<string, Tag> $properties
+	 */
+	public function lookupNearestStateId(string $name, array $properties) : ?int{
+		$lookup = $this->stateDataToStateIdLookup[$name] ?? null;
+		if(!is_array($lookup)){
+			return $lookup;
+		}
+
+		$nearestStateId = $lookup[BlockStateDictionaryEntry::encodeStateProperties($properties)] ?? null;
+		if($nearestStateId !== null){
+			return $nearestStateId;
+		}
+
+		$nearestScore = -1;
+		foreach(Utils::stringifyKeys($lookup) as $rawProperties => $stateId){
+			$score = 0;
+			foreach(BlockStateDictionaryEntry::decodeStateProperties($rawProperties) as $key => $tag){
+				if(isset($properties[$key]) && $properties[$key]->equals($tag)){
+					$score += isset(self::ORIENTATION_PROPERTIES[$key]) ? 2 : 1;
+				}
+			}
+			if($score > $nearestScore){
+				$nearestScore = $score;
+				$nearestStateId = $stateId;
+			}
+		}
+
+		return $nearestStateId;
 	}
 
 	/**

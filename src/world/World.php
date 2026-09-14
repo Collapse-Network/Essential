@@ -1279,7 +1279,7 @@ class World implements ChunkManager{
 				UpdateBlockPacket::DATA_LAYER_NORMAL
 			);
 
-			if($tile instanceof Spawnable){
+			if($tile instanceof Spawnable && !$blockTranslator->isSubstituted($blockStateId)){
 				$packets[] = BlockActorDataPacket::create($blockPosition, $tile->getSerializedSpawnCompound($typeConverter));
 			}
 		}

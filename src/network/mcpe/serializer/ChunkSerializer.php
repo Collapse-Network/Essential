@@ -377,8 +377,13 @@ final class ChunkSerializer{
 
 	public static function serializeTiles(Chunk $chunk, TypeConverter $typeConverter) : string{
 		$stream = new BinaryStream();
+		$blockTranslator = $typeConverter->getBlockTranslator();
 		foreach($chunk->getTiles() as $tile){
-			if($tile instanceof Spawnable){
+			if(!$tile instanceof Spawnable){
+				continue;
+			}
+			$position = $tile->getPosition();
+			if(!$blockTranslator->isSubstituted($chunk->getBlockStateId($position->getFloorX() & Chunk::COORD_MASK, $position->getFloorY(), $position->getFloorZ() & Chunk::COORD_MASK))){
 				$stream->put($tile->getSerializedSpawnCompound($typeConverter)->getEncodedNbt());
 			}
 		}

@@ -47,6 +47,8 @@ final class BlockTranslator{
 	public const CANONICAL_BLOCK_STATES_PATH = 0;
 	public const BLOCK_STATE_META_MAP_PATH = 1;
 
+	private const MAX_SUBSTITUTE_DEPTH = 8;
+
 	private const PATHS = [
 		ProtocolInfo::CURRENT_PROTOCOL => [
 			self::CANONICAL_BLOCK_STATES_PATH => '',
@@ -288,6 +290,12 @@ final class BlockTranslator{
 	 */
 	private array $networkIdCache = [];
 
+	/**
+	 * @var true[]
+	 * @phpstan-var array<int, true>
+	 */
+	private array $substitutedStateIds = [];
+
 	/** Used when a blockstate can't be correctly serialized (e.g. because it's unknown) */
 	private BlockStateData $fallbackStateData;
 	private int $fallbackStateId;
@@ -346,17 +354,45 @@ final class BlockTranslator{
 		try{
 			$blockStateData = $this->blockStateSerializer->serialize($internalStateId);
 
-			$networkId = $this->blockStateDictionary->lookupStateIdFromData($blockStateData);
-			if($networkId === null){
-				throw new BlockStateSerializeException("Unmapped blockstate returned by blockstate serializer: " . $blockStateData->toNbt());
-			}
+			$networkId = $this->blockStateDictionary->lookupStateIdFromData($blockStateData) ?? $this->lookupSubstituteStateId($internalStateId, $blockStateData);
 		}catch(BlockStateSerializeException){
 			//TODO: this will swallow any error caused by invalid block properties; this is not ideal, but it should be
 			//covered by unit tests, so this is probably a safe assumption.
+			$this->substitutedStateIds[$internalStateId] = true;
 			$networkId = $this->fallbackStateId;
 		}
 
 		return $this->networkIdCache[$internalStateId] = $networkId;
+	}
+
+	private function lookupSubstituteStateId(int $internalStateId, BlockStateData $blockStateData) : int{
+		$name = $blockStateData->getName();
+		$properties = $blockStateData->getStates();
+		for($depth = 0; $depth < self::MAX_SUBSTITUTE_DEPTH && $name !== null; ++$depth){
+			$networkId = $this->blockStateDictionary->lookupNearestStateId($name, $properties);
+			if($networkId !== null){
+				if($depth > 0){
+					$this->substitutedStateIds[$internalStateId] = true;
+				}
+
+				return $networkId;
+			}
+			$name = BlockStateSubstitutes::next($name);
+		}
+
+		$this->substitutedStateIds[$internalStateId] = true;
+
+		return $this->fallbackStateId;
+	}
+
+	/**
+	 * Returns whether the given state is shown to this protocol as a different block. Tiles of such blocks must not be
+	 * sent, since the client doesn't expect them on the block it sees.
+	 */
+	public function isSubstituted(int $internalStateId) : bool{
+		$this->internalIdToNetworkId($internalStateId);
+
+		return isset($this->substitutedStateIds[$internalStateId]);
 	}
 
 	public function networkIdsAreHashes() : bool{
