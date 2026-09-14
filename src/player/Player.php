@@ -147,6 +147,7 @@ use function abs;
 use function array_filter;
 use function array_shift;
 use function assert;
+use function ceil;
 use function count;
 use function explode;
 use function floor;
@@ -1965,7 +1966,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	 *
 	 * @return bool if the entity was dealt damage
 	 */
-	public function attackEntity(Entity $entity) : bool{
+	public function attackEntity(Entity $entity, ?Vector3 $clientClickPos = null, ?Vector3 $clientPlayerPos = null) : bool{
 		if(!$entity->isAlive()){
 			return false;
 		}
@@ -1978,7 +1979,24 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 		$oldItem = clone $heldItem;
 
 		$ev = new EntityDamageByEntityEvent($this, $entity, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $heldItem->getAttackPoints());
-		if(!$this->canInteract($entity->getLocation(), self::MAX_REACH_DISTANCE_ENTITY_INTERACTION)){
+		$reachPos = $entity->getLocation();
+		$pingMs = null;
+		if(($entity instanceof Living) && $this->isConnected()){
+			$pingMs = $this->getNetworkSession()->getPing();
+			if($pingMs !== null && $pingMs > 0){
+				$rewindTicks = (int)min(ceil($pingMs / 50), 6); // cap at 6 ticks (300ms)
+				$historicalPos = $entity->getPositionHistory()->getPositionAtTick(
+					$this->server->getTick() - $rewindTicks
+				);
+				if($historicalPos !== null){
+					$reachPos = $historicalPos;
+				}
+			}
+		}
+		if(
+			!$this->canInteract($reachPos, self::MAX_REACH_DISTANCE_ENTITY_INTERACTION) &&
+			!$this->canInteractWithClientHitPosition($entity, $clientClickPos, $clientPlayerPos, $pingMs ?? 0)
+		){
 			$this->logger->debug("Cancelled attack of entity " . $entity->getId() . " due to not currently being interactable");
 			$ev->cancel();
 		}elseif($this->isSpectator() || ($entity instanceof Player && !$this->server->getConfigGroup()->getConfigBool(ServerProperties::PVP))){
@@ -2042,6 +2060,33 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 		}
 
 		return true;
+	}
+
+	public function canInteractWithClientHitPosition(Entity $entity, ?Vector3 $clientClickPos, ?Vector3 $clientPlayerPos, int $pingMs) : bool{
+		if($clientClickPos === null || !$entity instanceof Living){
+			return false;
+		}
+
+		$serverPlayerPos = $this->location;
+		if($clientPlayerPos !== null && $clientPlayerPos->distanceSquared($serverPlayerPos) > 16){
+			return false;
+		}
+
+		$size = $entity->getSize();
+		$entityPos = $entity->getLocation();
+		$relativeClickPos = $entityPos->add($clientClickPos->x, $clientClickPos->y, $clientClickPos->z);
+		$maxAgeTicks = min(max((int) ceil(max($pingMs, 0) / 50), 1) + 2, 8);
+
+		foreach([$clientClickPos, $relativeClickPos] as $candidate){
+			if(!$entity->getPositionHistory()->isNearRecentHitbox($candidate, $size, $this->server->getTick(), $maxAgeTicks, 0.35)){
+				continue;
+			}
+			if($this->canInteract($candidate, self::MAX_REACH_DISTANCE_ENTITY_INTERACTION)){
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
