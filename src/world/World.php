@@ -138,7 +138,10 @@ use function get_class;
 use function gettype;
 use function in_array;
 use function is_a;
+use function is_array;
+use function is_numeric;
 use function is_object;
+use function is_string;
 use function max;
 use function microtime;
 use function min;
@@ -149,7 +152,10 @@ use function morton3d_encode;
 use function mt_rand;
 use function preg_match;
 use function spl_object_id;
+use function str_ends_with;
+use function str_starts_with;
 use function strtolower;
+use function substr;
 use function trim;
 use const M_PI;
 use const PHP_INT_MAX;
@@ -372,6 +378,9 @@ class World implements ChunkManager{
 
 	private int $chunkTickRadius;
 	private int $tickedBlocksPerSubchunkPerTick = self::DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK;
+	private int $tickingChunkRecheckLimit;
+	private ?int $viewDistanceLimit = null;
+	private ?int $fixedLightLevel = null;
 	/**
 	 * @var true[]
 	 * @phpstan-var array<int, true>
@@ -555,6 +564,23 @@ class World implements ChunkManager{
 			$this->chunkTickRadius = 0;
 		}
 		$this->tickedBlocksPerSubchunkPerTick = $cfg->getPropertyInt(YmlServerProperties::CHUNK_TICKING_BLOCKS_PER_SUBCHUNK_PER_TICK, self::DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK);
+		$chunkTicking = self::findPerWorldSetting($cfg->getProperty(YmlServerProperties::COLLAPSE_PER_WORLD_CHUNK_TICKING, []), $this->folderName);
+		if(is_array($chunkTicking)){
+			if(isset($chunkTicking["tick-radius"])){
+				$this->chunkTickRadius = min($this->server->getViewDistance(), max(0, (int) $chunkTicking["tick-radius"]));
+			}
+			if(isset($chunkTicking["blocks-per-subchunk-per-tick"])){
+				$this->tickedBlocksPerSubchunkPerTick = max(0, (int) $chunkTicking["blocks-per-subchunk-per-tick"]);
+			}
+		}
+		$viewDistance = self::findPerWorldSetting($cfg->getProperty(YmlServerProperties::COLLAPSE_PER_WORLD_VIEW_DISTANCE, []), $this->folderName);
+		if(is_numeric($viewDistance)){
+			$this->viewDistanceLimit = max(2, (int) $viewDistance);
+		}
+		$this->tickingChunkRecheckLimit = max(0, $cfg->getPropertyInt(YmlServerProperties::COLLAPSE_CHUNK_OPTIMIZATION_BATCH_RECHECK_LIMIT, 64));
+		if($cfg->getPropertyBool(YmlServerProperties::COLLAPSE_FIXED_LIGHT_ENABLED, false)){
+			$this->fixedLightLevel = min(15, max(0, $cfg->getPropertyInt(YmlServerProperties::COLLAPSE_FIXED_LIGHT_LEVEL, 15)));
+		}
 		$this->maxConcurrentChunkPopulationTasks = $cfg->getPropertyInt(YmlServerProperties::CHUNK_GENERATION_POPULATION_QUEUE_SIZE, 2);
 
 		$this->initRandomTickBlocksFromConfig($cfg);
@@ -1372,6 +1398,32 @@ class World implements ChunkManager{
 	}
 
 	/**
+	 * Returns the maximum view distance players in this world may use, or null if only the server limit applies.
+	 */
+	public function getViewDistanceLimit() : ?int{
+		return $this->viewDistanceLimit;
+	}
+
+	/**
+	 * Looks a world up in a per-world settings map by exact folder name, then by "prefix*" patterns.
+	 */
+	private static function findPerWorldSetting(mixed $settings, string $folderName) : mixed{
+		if(!is_array($settings)){
+			return null;
+		}
+		if(isset($settings[$folderName])){
+			return $settings[$folderName];
+		}
+		foreach($settings as $pattern => $value){
+			if(is_string($pattern) && str_ends_with($pattern, "*") && str_starts_with($folderName, substr($pattern, 0, -1))){
+				return $value;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Sets the radius of chunks ticked around each player. This may not take effect immediately, since each player
 	 * needs to recalculate their tick radius.
 	 */
@@ -1429,14 +1481,18 @@ class World implements ChunkManager{
 			$this->timings->randomChunkUpdatesChunkSelection->startTiming();
 
 			$chunkTickableCache = [];
+			$remaining = $this->tickingChunkRecheckLimit;
 
 			foreach($this->recheckTickingChunks as $hash => $_){
 				World::getXZ($hash, $chunkX, $chunkZ);
 				if($this->isChunkTickable($chunkX, $chunkZ, $chunkTickableCache)){
 					$this->validTickingChunks[$hash] = $hash;
 				}
+				unset($this->recheckTickingChunks[$hash]);
+				if(--$remaining === 0){
+					break;
+				}
 			}
-			$this->recheckTickingChunks = [];
 
 			$this->timings->randomChunkUpdatesChunkSelection->stopTiming();
 		}
@@ -1516,6 +1572,16 @@ class World implements ChunkManager{
 		$chunkHash = World::chunkHash($chunkX, $chunkZ);
 		$lightPopulatedState = $this->chunks[$chunkHash]->isLightPopulated();
 		if($lightPopulatedState === false){
+			if($this->fixedLightLevel !== null){
+				$chunk = $this->chunks[$chunkHash];
+				foreach($chunk->getSubChunks() as $subChunk){
+					$subChunk->setBlockSkyLightArray(LightArray::fill($this->fixedLightLevel));
+					$subChunk->setBlockLightArray(LightArray::fill($this->fixedLightLevel));
+				}
+				$chunk->setLightPopulated(true);
+				$this->markTickingChunkForRecheck($chunkX, $chunkZ);
+				return;
+			}
 			$this->chunks[$chunkHash]->setLightPopulated(null);
 			$this->markTickingChunkForRecheck($chunkX, $chunkZ);
 

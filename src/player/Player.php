@@ -1011,9 +1011,14 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 
 		$world = $this->getWorld();
 		$tickingChunkRadius = $world->getChunkTickRadius();
+		$viewDistance = $this->server->getAllowedViewDistance($this->viewDistance);
+		$worldViewDistanceLimit = $world->getViewDistanceLimit();
+		if($worldViewDistanceLimit !== null){
+			$viewDistance = min($viewDistance, $worldViewDistanceLimit);
+		}
 
 		foreach($this->chunkSelector->selectChunks(
-			$this->server->getAllowedViewDistance($this->viewDistance),
+			$viewDistance,
 			$this->location->getFloorX() >> Chunk::COORD_BIT_SIZE,
 			$this->location->getFloorZ() >> Chunk::COORD_BIT_SIZE
 		) as $radius => $hash){

@@ -103,3 +103,12 @@ network:
 level-settings:
   default-format: leveldb
   min-y: 0
+
+collapse:
+  fixed-light:
+    enabled: true
+    level: 15
+  per-world-view-distance: {}
+  chunk-optimization:
+    batch-recheck-limit: 64
+  per-world-chunk-ticking: {}

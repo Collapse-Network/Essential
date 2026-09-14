@@ -65,6 +65,14 @@ final class YmlServerProperties{
 	public const CHUNK_TICKING_BLOCKS_PER_SUBCHUNK_PER_TICK = 'chunk-ticking.blocks-per-subchunk-per-tick';
 	public const CHUNK_TICKING_DISABLE_BLOCK_TICKING = 'chunk-ticking.disable-block-ticking';
 	public const CHUNK_TICKING_TICK_RADIUS = 'chunk-ticking.tick-radius';
+	public const COLLAPSE = 'collapse';
+	public const COLLAPSE_CHUNK_OPTIMIZATION = 'collapse.chunk-optimization';
+	public const COLLAPSE_CHUNK_OPTIMIZATION_BATCH_RECHECK_LIMIT = 'collapse.chunk-optimization.batch-recheck-limit';
+	public const COLLAPSE_FIXED_LIGHT = 'collapse.fixed-light';
+	public const COLLAPSE_FIXED_LIGHT_ENABLED = 'collapse.fixed-light.enabled';
+	public const COLLAPSE_FIXED_LIGHT_LEVEL = 'collapse.fixed-light.level';
+	public const COLLAPSE_PER_WORLD_CHUNK_TICKING = 'collapse.per-world-chunk-ticking';
+	public const COLLAPSE_PER_WORLD_VIEW_DISTANCE = 'collapse.per-world-view-distance';
 	public const CONSOLE = 'console';
 	public const CONSOLE_ENABLE_INPUT = 'console.enable-input';
 	public const CONSOLE_TITLE_TICK = 'console.title-tick';
