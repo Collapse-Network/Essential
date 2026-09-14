@@ -101,6 +101,7 @@ use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
+use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\io\WritableWorldProvider;
 use pocketmine\world\format\LightArray;
 use pocketmine\world\format\SubChunk;
@@ -3220,7 +3221,7 @@ class World implements ChunkManager{
 		$loadedChunkData = null;
 
 		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z);
+			$loadedChunkData = $this->loadChunkData($x, $z);
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
@@ -3263,6 +3264,10 @@ class World implements ChunkManager{
 		$this->timings->syncChunkLoad->stopTiming();
 
 		return $this->chunks[$chunkHash];
+	}
+
+	protected function loadChunkData(int $x, int $z) : ?LoadedChunkData{
+		return $this->provider->loadChunk($x, $z);
 	}
 
 	private function initChunk(int $chunkX, int $chunkZ, ChunkData $chunkData) : void{
