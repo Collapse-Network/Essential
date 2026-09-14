@@ -66,6 +66,7 @@ use pocketmine\network\mcpe\protocol\types\recipe\TagItemDescriptor;
 use pocketmine\player\GameMode;
 use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\ObjectSet;
 use pocketmine\utils\ProtocolSingletonTrait;
 use pocketmine\utils\Utils;
 use pocketmine\world\format\io\GlobalItemDataHandlers;
@@ -92,6 +93,34 @@ class TypeConverter{
 	private int $shieldRuntimeId;
 
 	private SkinAdapter $skinAdapter;
+
+	/**
+	 * @var \Closure[]|ObjectSet|null
+	 * @phpstan-var ObjectSet<\Closure(TypeConverter) : void>|null
+	 */
+	private static ?ObjectSet $creationHooks = null;
+
+	/**
+	 * Closures called with every converter created by getInstance(), right after it becomes available.
+	 * Converters are created lazily per protocol, so hooks also run for protocols first seen later on.
+	 *
+	 * @return \Closure[]|ObjectSet
+	 * @phpstan-return ObjectSet<\Closure(TypeConverter) : void>
+	 */
+	public static function getCreationHooks() : ObjectSet{
+		return self::$creationHooks ??= new ObjectSet();
+	}
+
+	public static function getInstance(int $protocolId = ProtocolInfo::CURRENT_PROTOCOL) : self{
+		if(!isset(self::$instance[$protocolId])){
+			$converter = self::$instance[$protocolId] = self::make($protocolId);
+			foreach(self::getCreationHooks() as $hook){
+				$hook($converter);
+			}
+		}
+
+		return self::$instance[$protocolId];
+	}
 
 	public function __construct(int $protocolId){
 		$this->__protocolConstruct($protocolId);
