@@ -34,7 +34,12 @@ use pocketmine\data\bedrock\block\convert\UnsupportedBlockStateException;
 use pocketmine\data\bedrock\item\SavedItemData as Data;
 use pocketmine\item\Durable;
 use pocketmine\item\Item;
+use pocketmine\item\ItemIdentifier;
+use pocketmine\item\ItemTypeIds;
+use pocketmine\item\StringToItemParser;
 use pocketmine\nbt\NbtException;
+use pocketmine\Server;
+use pocketmine\world\format\io\GlobalItemDataHandlers;
 use function min;
 
 final class ItemDeserializer{
@@ -93,7 +98,14 @@ final class ItemDeserializer{
 		}
 		$id = $data->getName();
 		if(!isset($this->deserializers[$id])){
-			throw new UnsupportedItemTypeException("No deserializer found for ID $id");
+			$newItem = new Item(new ItemIdentifier(ItemTypeIds::newId()), $id);
+
+			GlobalItemDataHandlers::getDeserializer()->map($id, fn() => clone $newItem);
+			GlobalItemDataHandlers::getSerializer()->map($newItem, fn() => new Data($id));
+
+			StringToItemParser::getInstance()->register($id, fn() => clone $newItem);
+			Server::getInstance()->getLogger()->debug("Registered unknown item without deserializer: " . $id);
+			return $this->deserializeType($data);
 		}
 
 		return ($this->deserializers[$id])($data);

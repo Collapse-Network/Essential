@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace pocketmine\utils;
 
+use pocketmine\Server;
 use function array_keys;
 use function str_replace;
 use function strtolower;
@@ -51,7 +52,7 @@ abstract class StringToTParser{
 	public function register(string $alias, \Closure $callback) : void{
 		$key = $this->reprocess($alias);
 		if(isset($this->callbackMap[$key])){
-			throw new \InvalidArgumentException("Alias \"$key\" is already registered");
+			Server::getInstance()->getLogger()->debug("Alias \"$key\" is already registered");
 		}
 		$this->callbackMap[$key] = $callback;
 	}
