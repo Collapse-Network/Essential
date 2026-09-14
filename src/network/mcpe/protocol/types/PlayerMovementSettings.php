@@ -46,6 +46,7 @@ final class PlayerMovementSettings{
 		if($in->getProtocolId() < ProtocolInfo::PROTOCOL_1_13_0){
 			return new self(ServerAuthMovementMode::SERVER_AUTHORITATIVE_V2, 0, false);
 		}
+		$movementType = ServerAuthMovementMode::SERVER_AUTHORITATIVE_V3;
 		if($in->getProtocolId() >= ProtocolInfo::PROTOCOL_1_16_100){
 			if($in->getProtocolId() <= ProtocolInfo::PROTOCOL_1_21_80){
 				$movementType = ServerAuthMovementMode::fromPacket($in->getVarInt());
@@ -55,7 +56,8 @@ final class PlayerMovementSettings{
 				$serverAuthBlockBreaking = $in->getBool();
 			}
 		}else{
-			$movementType = $in->getBool() ? ServerAuthMovementMode::SERVER_AUTHORITATIVE_V2 : 0;
+			$in->getBool();
+			$movementType = ServerAuthMovementMode::SERVER_AUTHORITATIVE_V2;
 		}
 
 		return new self($movementType, $rewindHistorySize ?? 0, $serverAuthBlockBreaking ?? false);

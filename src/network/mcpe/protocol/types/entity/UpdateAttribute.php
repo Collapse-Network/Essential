@@ -75,8 +75,8 @@ final class UpdateAttribute{
 		$default = $in->getLFloat();
 		$id = $in->getString();
 
+		$modifiers = [];
 		if($in->getProtocolId() >= ProtocolInfo::PROTOCOL_1_19_20){
-			$modifiers = [];
 			for($j = 0, $modifierCount = $in->getUnsignedVarInt(); $j < $modifierCount; $j++){
 				$modifiers[] = AttributeModifier::read($in);
 			}
