@@ -126,7 +126,8 @@ class Normal extends Generator{
 	private function pickBiome(int $x, int $z) : Biome{
 		$hash = $x * 2345803 ^ $z * 9236449 ^ $this->seed;
 		$hash *= $hash + 223;
-		$hash = (int) $hash;
+		//the above operations may result in a float, which PHP 8.5 refuses to cast back to int when out of range
+		$hash = (int) fmod($hash, 2.0 ** 63);
 		$xNoise = $hash >> 20 & 3;
 		$zNoise = $hash >> 22 & 3;
 		if($xNoise === 3){
