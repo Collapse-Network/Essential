@@ -109,6 +109,7 @@ use pocketmine\network\mcpe\protocol\types\inventory\stackresponse\ItemStackResp
 use pocketmine\network\mcpe\protocol\types\inventory\UIInventorySlotOffset;
 use pocketmine\network\mcpe\protocol\types\inventory\UseItemOnEntityTransactionData;
 use pocketmine\network\mcpe\protocol\types\inventory\UseItemTransactionData;
+use pocketmine\network\mcpe\protocol\types\LevelSoundEvent;
 use pocketmine\network\mcpe\protocol\types\PlayerAction;
 use pocketmine\network\mcpe\protocol\types\PlayerAuthInputFlags;
 use pocketmine\network\mcpe\protocol\types\PlayerBlockActionStopBreak;
@@ -1276,7 +1277,11 @@ class InGamePacketHandler extends PacketHandler{
 		 * However, some plugins find this useful to detect events like left-click-air, which doesn't have any other
 		 * action bound to it.
 		 * In addition, we use this handler to silence debug noise, since this packet is frequently sent by the client.
+		 * Clients older than 1.20.10 have no MISSED_SWING input flag and report a miss swing only through this sound.
 		 */
+		if($packet->sound === LevelSoundEvent::ATTACK_NODAMAGE && $this->session->getProtocolId() < ProtocolInfo::PROTOCOL_1_20_10){
+			$this->player->missSwing();
+		}
 		return true;
 	}
 
