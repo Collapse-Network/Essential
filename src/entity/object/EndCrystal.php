@@ -91,6 +91,8 @@ class EndCrystal extends Entity implements Explosive{
 		parent::attack($source);
 		if(
 			$source->getCause() !== EntityDamageEvent::CAUSE_VOID &&
+			$source->getCause() !== EntityDamageEvent::CAUSE_ENTITY_EXPLOSION &&
+			$source->getCause() !== EntityDamageEvent::CAUSE_BLOCK_EXPLOSION &&
 			!$this->isFlaggedForDespawn() &&
 			!$source->isCancelled()
 		){
