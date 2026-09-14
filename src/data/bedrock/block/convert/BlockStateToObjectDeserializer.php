@@ -89,6 +89,7 @@ final class BlockStateToObjectDeserializer implements BlockStateDeserializer{
 		$this->registerFlatCoralDeserializers();
 		$this->registerCauldronDeserializers();
 		$this->registerFlatWoodBlockDeserializers();
+		$this->registerHangingSignDeserializers();
 		$this->registerLeavesDeserializers();
 		$this->registerSaplingDeserializers();
 		$this->registerLightDeserializers();
@@ -532,6 +533,22 @@ final class BlockStateToObjectDeserializer implements BlockStateDeserializer{
 		$this->mapSlab(Ids::ACACIA_SLAB, Ids::ACACIA_DOUBLE_SLAB, fn() => Blocks::ACACIA_SLAB());
 		$this->mapStairs(Ids::ACACIA_STAIRS, fn() => Blocks::ACACIA_STAIRS());
 
+		$this->map(Ids::BAMBOO_BUTTON, fn(Reader $in) => Helper::decodeButton(Blocks::BAMBOO_BUTTON(), $in));
+		$this->map(Ids::BAMBOO_DOOR, fn(Reader $in) => Helper::decodeDoor(Blocks::BAMBOO_DOOR(), $in));
+		$this->map(Ids::BAMBOO_FENCE_GATE, fn(Reader $in) => Helper::decodeFenceGate(Blocks::BAMBOO_FENCE_GATE(), $in));
+		$this->map(Ids::BAMBOO_PRESSURE_PLATE, fn(Reader $in) => Helper::decodeSimplePressurePlate(Blocks::BAMBOO_PRESSURE_PLATE(), $in));
+		$this->map(Ids::BAMBOO_STANDING_SIGN, fn(Reader $in) => Helper::decodeFloorSign(Blocks::BAMBOO_SIGN(), $in));
+		$this->map(Ids::BAMBOO_TRAPDOOR, fn(Reader $in) => Helper::decodeTrapdoor(Blocks::BAMBOO_TRAPDOOR(), $in));
+		$this->map(Ids::BAMBOO_WALL_SIGN, fn(Reader $in) => Helper::decodeWallSign(Blocks::BAMBOO_WALL_SIGN(), $in));
+		$this->mapLog(Ids::BAMBOO_BLOCK, Ids::STRIPPED_BAMBOO_BLOCK, fn() => Blocks::BAMBOO_BLOCK());
+		$this->mapSimple(Ids::BAMBOO_FENCE, fn() => Blocks::BAMBOO_FENCE());
+		$this->mapSimple(Ids::BAMBOO_MOSAIC, fn() => Blocks::BAMBOO_MOSAIC());
+		$this->mapSimple(Ids::BAMBOO_PLANKS, fn() => Blocks::BAMBOO_PLANKS());
+		$this->mapSlab(Ids::BAMBOO_MOSAIC_SLAB, Ids::BAMBOO_MOSAIC_DOUBLE_SLAB, fn() => Blocks::BAMBOO_MOSAIC_SLAB());
+		$this->mapSlab(Ids::BAMBOO_SLAB, Ids::BAMBOO_DOUBLE_SLAB, fn() => Blocks::BAMBOO_SLAB());
+		$this->mapStairs(Ids::BAMBOO_MOSAIC_STAIRS, fn() => Blocks::BAMBOO_MOSAIC_STAIRS());
+		$this->mapStairs(Ids::BAMBOO_STAIRS, fn() => Blocks::BAMBOO_STAIRS());
+
 		$this->map(Ids::BIRCH_BUTTON, fn(Reader $in) => Helper::decodeButton(Blocks::BIRCH_BUTTON(), $in));
 		$this->map(Ids::BIRCH_DOOR, fn(Reader $in) => Helper::decodeDoor(Blocks::BIRCH_DOOR(), $in));
 		$this->map(Ids::BIRCH_FENCE_GATE, fn(Reader $in) => Helper::decodeFenceGate(Blocks::BIRCH_FENCE_GATE(), $in));
@@ -674,6 +691,40 @@ final class BlockStateToObjectDeserializer implements BlockStateDeserializer{
 		$this->mapSimple(Ids::WARPED_PLANKS, fn() => Blocks::WARPED_PLANKS());
 		$this->mapSlab(Ids::WARPED_SLAB, Ids::WARPED_DOUBLE_SLAB, fn() => Blocks::WARPED_SLAB());
 		$this->mapStairs(Ids::WARPED_STAIRS, fn() => Blocks::WARPED_STAIRS());
+	}
+
+	private function registerHangingSignDeserializers() : void{
+		foreach([
+			Ids::ACACIA_HANGING_SIGN => [fn() => Blocks::ACACIA_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::ACACIA_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::ACACIA_WALL_HANGING_SIGN()],
+			Ids::BAMBOO_HANGING_SIGN => [fn() => Blocks::BAMBOO_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::BAMBOO_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::BAMBOO_WALL_HANGING_SIGN()],
+			Ids::BIRCH_HANGING_SIGN => [fn() => Blocks::BIRCH_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::BIRCH_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::BIRCH_WALL_HANGING_SIGN()],
+			Ids::CHERRY_HANGING_SIGN => [fn() => Blocks::CHERRY_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::CHERRY_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::CHERRY_WALL_HANGING_SIGN()],
+			Ids::CRIMSON_HANGING_SIGN => [fn() => Blocks::CRIMSON_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::CRIMSON_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::CRIMSON_WALL_HANGING_SIGN()],
+			Ids::DARK_OAK_HANGING_SIGN => [fn() => Blocks::DARK_OAK_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::DARK_OAK_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::DARK_OAK_WALL_HANGING_SIGN()],
+			Ids::JUNGLE_HANGING_SIGN => [fn() => Blocks::JUNGLE_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::JUNGLE_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::JUNGLE_WALL_HANGING_SIGN()],
+			Ids::MANGROVE_HANGING_SIGN => [fn() => Blocks::MANGROVE_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::MANGROVE_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::MANGROVE_WALL_HANGING_SIGN()],
+			Ids::OAK_HANGING_SIGN => [fn() => Blocks::OAK_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::OAK_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::OAK_WALL_HANGING_SIGN()],
+			Ids::PALE_OAK_HANGING_SIGN => [fn() => Blocks::PALE_OAK_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::PALE_OAK_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::PALE_OAK_WALL_HANGING_SIGN()],
+			Ids::SPRUCE_HANGING_SIGN => [fn() => Blocks::SPRUCE_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::SPRUCE_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::SPRUCE_WALL_HANGING_SIGN()],
+			Ids::WARPED_HANGING_SIGN => [fn() => Blocks::WARPED_CEILING_CENTER_HANGING_SIGN(), fn() => Blocks::WARPED_CEILING_EDGES_HANGING_SIGN(), fn() => Blocks::WARPED_WALL_HANGING_SIGN()],
+		] as $id => [$center, $edges, $wall]){
+			$this->map($id, function(Reader $in) use ($center, $edges, $wall) : Block{
+				if(!$in->readBool(StateNames::HANGING)){
+					$in->ignored(StateNames::ATTACHED_BIT);
+					$in->ignored(StateNames::GROUND_SIGN_DIRECTION);
+
+					return $wall()->setFacing($in->readHorizontalFacing());
+				}
+				if($in->readBool(StateNames::ATTACHED_BIT)){
+					$in->ignored(StateNames::FACING_DIRECTION);
+
+					return $center()->setRotation($in->readBoundedInt(StateNames::GROUND_SIGN_DIRECTION, 0, 15));
+				}
+				$in->ignored(StateNames::GROUND_SIGN_DIRECTION);
+
+				return $edges()->setFacing($in->readHorizontalFacing());
+			});
+		}
 	}
 
 	private function registerLeavesDeserializers() : void{
@@ -1081,6 +1132,8 @@ final class BlockStateToObjectDeserializer implements BlockStateDeserializer{
 		$this->mapSimple(Ids::GRASS_PATH, fn() => Blocks::GRASS_PATH());
 		$this->mapSimple(Ids::GRAVEL, fn() => Blocks::GRAVEL());
 		$this->mapSimple(Ids::HANGING_ROOTS, fn() => Blocks::HANGING_ROOTS());
+		$this->mapSimple(Ids::AZALEA, fn() => Blocks::AZALEA());
+		$this->mapSimple(Ids::FLOWERING_AZALEA, fn() => Blocks::FLOWERING_AZALEA());
 		$this->mapSimple(Ids::HARD_GLASS, fn() => Blocks::HARDENED_GLASS());
 		$this->mapSimple(Ids::HARD_GLASS_PANE, fn() => Blocks::HARDENED_GLASS_PANE());
 		$this->mapSimple(Ids::HARDENED_CLAY, fn() => Blocks::HARDENED_CLAY());
@@ -1297,8 +1350,9 @@ final class BlockStateToObjectDeserializer implements BlockStateDeserializer{
 		});
 
 		$this->map(Ids::BEEHIVE, function(Reader $in) : Block{
-			$in->ignored(StateNames::DEPRECATED);
-			return Blocks::BEEHIVE()->setAxis($in->readPillarAxis());
+			return Blocks::BEEHIVE()
+				->setFacing($in->readLegacyHorizontalFacing())
+				->setHoneyLevel($in->readBoundedInt(StateNames::HONEY_LEVEL, 0, 5));
 		});
 
 		$this->map(Ids::BREWING_STAND, function(Reader $in) : Block{

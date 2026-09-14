@@ -72,6 +72,7 @@ final class TileFactory{
 		$this->register(FlowerPot::class, ["FlowerPot", "minecraft:flower_pot"]);
 		$this->register(NormalFurnace::class, ["Furnace", "minecraft:furnace"]);
 		$this->register(Grindstone::class, ["Grindstone", "minecraft:grindstone"]);
+		$this->register(HangingSign::class, ["HangingSign", "minecraft:hanging_sign"]);
 		$this->register(Hopper::class, ["Hopper", "minecraft:hopper"]);
 		$this->register(ItemFrame::class, ["ItemFrame"]); //this is an entity in PC
 		$this->register(Jukebox::class, ["Jukebox", "RecordPlayer", "minecraft:jukebox"]);

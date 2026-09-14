@@ -26,8 +26,29 @@ declare(strict_types=1);
 
 namespace pocketmine\block;
 
-use pocketmine\block\utils\PillarRotationTrait;
+use pocketmine\block\utils\FacesOppositePlacingPlayerTrait;
+use pocketmine\data\runtime\RuntimeDataDescriber;
 
 class BeeHive extends Opaque{
-	use PillarRotationTrait;
+	use FacesOppositePlacingPlayerTrait;
+
+	public const MAX_HONEY_LEVEL = 5;
+
+	protected int $honeyLevel = 0;
+
+	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
+		$w->horizontalFacing($this->facing);
+		$w->boundedIntAuto(0, self::MAX_HONEY_LEVEL, $this->honeyLevel);
+	}
+
+	public function getHoneyLevel() : int{ return $this->honeyLevel; }
+
+	/** @return $this */
+	public function setHoneyLevel(int $honeyLevel) : self{
+		if($honeyLevel < 0 || $honeyLevel > self::MAX_HONEY_LEVEL){
+			throw new \InvalidArgumentException("Honey level must be in range 0 ... " . self::MAX_HONEY_LEVEL);
+		}
+		$this->honeyLevel = $honeyLevel;
+		return $this;
+	}
 }

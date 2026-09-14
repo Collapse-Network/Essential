@@ -343,8 +343,21 @@ final class ItemTypeIds{
 	public const ELYTRA = 20301;
 	public const TRIDENT = 20302;
 	public const SHIELD = 20303;
+	public const ACACIA_HANGING_SIGN = 20304;
+	public const BAMBOO_HANGING_SIGN = 20305;
+	public const BIRCH_HANGING_SIGN = 20306;
+	public const CHERRY_HANGING_SIGN = 20307;
+	public const CRIMSON_HANGING_SIGN = 20308;
+	public const DARK_OAK_HANGING_SIGN = 20309;
+	public const JUNGLE_HANGING_SIGN = 20310;
+	public const MANGROVE_HANGING_SIGN = 20311;
+	public const OAK_HANGING_SIGN = 20312;
+	public const PALE_OAK_HANGING_SIGN = 20313;
+	public const SPRUCE_HANGING_SIGN = 20314;
+	public const WARPED_HANGING_SIGN = 20315;
+	public const BAMBOO_SIGN = 20316;
 
-	public const FIRST_UNUSED_ITEM_ID = 20304;
+	public const FIRST_UNUSED_ITEM_ID = 20317;
 
 	private static int $nextDynamicId = self::FIRST_UNUSED_ITEM_ID;
 

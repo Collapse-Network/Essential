@@ -127,6 +127,7 @@ final class BlockStateSubstitutes{
 		'/^ochre_froglight$/' => 'glowstone',
 		'/^chiseled_bookshelf$/' => 'bookshelf',
 		'/^smithing_table$/' => 'crafting_table',
+		'/^(beehive|bee_nest)$/' => 'oak_planks',
 		'/^light_block_\d+$/' => 'air',
 		'/^([a-z_]+_)?candle$/' => 'air',
 		'/^([a-z_]+_)?candle_cake$/' => 'cake',

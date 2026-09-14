@@ -53,6 +53,8 @@ use pocketmine\block\Carpet;
 use pocketmine\block\Carrot;
 use pocketmine\block\CarvedPumpkin;
 use pocketmine\block\CaveVines;
+use pocketmine\block\CeilingCenterHangingSign;
+use pocketmine\block\CeilingEdgesHangingSign;
 use pocketmine\block\Chain;
 use pocketmine\block\ChemistryTable;
 use pocketmine\block\Chest;
@@ -158,6 +160,7 @@ use pocketmine\block\TrappedChest;
 use pocketmine\block\Tripwire;
 use pocketmine\block\TripwireHook;
 use pocketmine\block\UnderwaterTorch;
+use pocketmine\block\WallHangingSign;
 use pocketmine\block\utils\BrewingStandSlot;
 use pocketmine\block\utils\CoralType;
 use pocketmine\block\utils\DirtType;
@@ -219,6 +222,7 @@ final class BlockObjectToStateSerializer implements BlockStateSerializer{
 		$this->registerFlatCoralSerializers();
 		$this->registerCauldronSerializers();
 		$this->registerFlatWoodBlockSerializers();
+		$this->registerHangingSignSerializers();
 		$this->registerLeavesSerializers();
 		$this->registerSaplingSerializers();
 		$this->registerMobHeadSerializers();
@@ -616,6 +620,22 @@ final class BlockObjectToStateSerializer implements BlockStateSerializer{
 		$this->mapSimple(Blocks::ACACIA_PLANKS(), Ids::ACACIA_PLANKS);
 		$this->mapSlab(Blocks::ACACIA_SLAB(), Ids::ACACIA_SLAB, Ids::ACACIA_DOUBLE_SLAB);
 
+		$this->map(Blocks::BAMBOO_BUTTON(), fn(WoodenButton $block) => Helper::encodeButton($block, new Writer(Ids::BAMBOO_BUTTON)));
+		$this->map(Blocks::BAMBOO_DOOR(), fn(WoodenDoor $block) => Helper::encodeDoor($block, new Writer(Ids::BAMBOO_DOOR)));
+		$this->map(Blocks::BAMBOO_FENCE_GATE(), fn(FenceGate $block) => Helper::encodeFenceGate($block, new Writer(Ids::BAMBOO_FENCE_GATE)));
+		$this->map(Blocks::BAMBOO_PRESSURE_PLATE(), fn(WoodenPressurePlate $block) => Helper::encodeSimplePressurePlate($block, new Writer(Ids::BAMBOO_PRESSURE_PLATE)));
+		$this->map(Blocks::BAMBOO_SIGN(), fn(FloorSign $block) => Helper::encodeFloorSign($block, new Writer(Ids::BAMBOO_STANDING_SIGN)));
+		$this->map(Blocks::BAMBOO_TRAPDOOR(), fn(WoodenTrapdoor $block) => Helper::encodeTrapdoor($block, new Writer(Ids::BAMBOO_TRAPDOOR)));
+		$this->map(Blocks::BAMBOO_WALL_SIGN(), fn(WallSign $block) => Helper::encodeWallSign($block, new Writer(Ids::BAMBOO_WALL_SIGN)));
+		$this->mapLog(Blocks::BAMBOO_BLOCK(), Ids::BAMBOO_BLOCK, Ids::STRIPPED_BAMBOO_BLOCK);
+		$this->mapSimple(Blocks::BAMBOO_FENCE(), Ids::BAMBOO_FENCE);
+		$this->mapSimple(Blocks::BAMBOO_MOSAIC(), Ids::BAMBOO_MOSAIC);
+		$this->mapSimple(Blocks::BAMBOO_PLANKS(), Ids::BAMBOO_PLANKS);
+		$this->mapSlab(Blocks::BAMBOO_MOSAIC_SLAB(), Ids::BAMBOO_MOSAIC_SLAB, Ids::BAMBOO_MOSAIC_DOUBLE_SLAB);
+		$this->mapSlab(Blocks::BAMBOO_SLAB(), Ids::BAMBOO_SLAB, Ids::BAMBOO_DOUBLE_SLAB);
+		$this->mapStairs(Blocks::BAMBOO_MOSAIC_STAIRS(), Ids::BAMBOO_MOSAIC_STAIRS);
+		$this->mapStairs(Blocks::BAMBOO_STAIRS(), Ids::BAMBOO_STAIRS);
+
 		$this->map(Blocks::BIRCH_BUTTON(), fn(WoodenButton $block) => Helper::encodeButton($block, new Writer(Ids::BIRCH_BUTTON)));
 		$this->map(Blocks::BIRCH_DOOR(), fn(WoodenDoor $block) => Helper::encodeDoor($block, new Writer(Ids::BIRCH_DOOR)));
 		$this->map(Blocks::BIRCH_FENCE_GATE(), fn(FenceGate $block) => Helper::encodeFenceGate($block, new Writer(Ids::BIRCH_FENCE_GATE)));
@@ -756,6 +776,39 @@ final class BlockObjectToStateSerializer implements BlockStateSerializer{
 		$this->mapSimple(Blocks::WARPED_PLANKS(), Ids::WARPED_PLANKS);
 		$this->mapSlab(Blocks::WARPED_SLAB(), Ids::WARPED_SLAB, Ids::WARPED_DOUBLE_SLAB);
 		$this->mapStairs(Blocks::WARPED_STAIRS(), Ids::WARPED_STAIRS);
+	}
+
+	private function registerHangingSignSerializers() : void{
+		foreach([
+			Ids::ACACIA_HANGING_SIGN => [Blocks::ACACIA_CEILING_CENTER_HANGING_SIGN(), Blocks::ACACIA_CEILING_EDGES_HANGING_SIGN(), Blocks::ACACIA_WALL_HANGING_SIGN()],
+			Ids::BAMBOO_HANGING_SIGN => [Blocks::BAMBOO_CEILING_CENTER_HANGING_SIGN(), Blocks::BAMBOO_CEILING_EDGES_HANGING_SIGN(), Blocks::BAMBOO_WALL_HANGING_SIGN()],
+			Ids::BIRCH_HANGING_SIGN => [Blocks::BIRCH_CEILING_CENTER_HANGING_SIGN(), Blocks::BIRCH_CEILING_EDGES_HANGING_SIGN(), Blocks::BIRCH_WALL_HANGING_SIGN()],
+			Ids::CHERRY_HANGING_SIGN => [Blocks::CHERRY_CEILING_CENTER_HANGING_SIGN(), Blocks::CHERRY_CEILING_EDGES_HANGING_SIGN(), Blocks::CHERRY_WALL_HANGING_SIGN()],
+			Ids::CRIMSON_HANGING_SIGN => [Blocks::CRIMSON_CEILING_CENTER_HANGING_SIGN(), Blocks::CRIMSON_CEILING_EDGES_HANGING_SIGN(), Blocks::CRIMSON_WALL_HANGING_SIGN()],
+			Ids::DARK_OAK_HANGING_SIGN => [Blocks::DARK_OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::DARK_OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::DARK_OAK_WALL_HANGING_SIGN()],
+			Ids::JUNGLE_HANGING_SIGN => [Blocks::JUNGLE_CEILING_CENTER_HANGING_SIGN(), Blocks::JUNGLE_CEILING_EDGES_HANGING_SIGN(), Blocks::JUNGLE_WALL_HANGING_SIGN()],
+			Ids::MANGROVE_HANGING_SIGN => [Blocks::MANGROVE_CEILING_CENTER_HANGING_SIGN(), Blocks::MANGROVE_CEILING_EDGES_HANGING_SIGN(), Blocks::MANGROVE_WALL_HANGING_SIGN()],
+			Ids::OAK_HANGING_SIGN => [Blocks::OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::OAK_WALL_HANGING_SIGN()],
+			Ids::PALE_OAK_HANGING_SIGN => [Blocks::PALE_OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::PALE_OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::PALE_OAK_WALL_HANGING_SIGN()],
+			Ids::SPRUCE_HANGING_SIGN => [Blocks::SPRUCE_CEILING_CENTER_HANGING_SIGN(), Blocks::SPRUCE_CEILING_EDGES_HANGING_SIGN(), Blocks::SPRUCE_WALL_HANGING_SIGN()],
+			Ids::WARPED_HANGING_SIGN => [Blocks::WARPED_CEILING_CENTER_HANGING_SIGN(), Blocks::WARPED_CEILING_EDGES_HANGING_SIGN(), Blocks::WARPED_WALL_HANGING_SIGN()],
+		] as $id => [$center, $edges, $wall]){
+			$this->map($center, fn(CeilingCenterHangingSign $block) => Writer::create($id)
+				->writeInt(StateNames::GROUND_SIGN_DIRECTION, $block->getRotation())
+				->writeBool(StateNames::ATTACHED_BIT, true)
+				->writeBool(StateNames::HANGING, true)
+				->writeFacingDirection(Facing::NORTH));
+			$this->map($edges, fn(CeilingEdgesHangingSign $block) => Writer::create($id)
+				->writeInt(StateNames::GROUND_SIGN_DIRECTION, 0)
+				->writeBool(StateNames::ATTACHED_BIT, false)
+				->writeBool(StateNames::HANGING, true)
+				->writeHorizontalFacing($block->getFacing()));
+			$this->map($wall, fn(WallHangingSign $block) => Writer::create($id)
+				->writeInt(StateNames::GROUND_SIGN_DIRECTION, 0)
+				->writeBool(StateNames::ATTACHED_BIT, false)
+				->writeBool(StateNames::HANGING, false)
+				->writeHorizontalFacing($block->getFacing()));
+		}
 	}
 
 	private function registerLeavesSerializers() : void{
@@ -1171,6 +1224,8 @@ final class BlockObjectToStateSerializer implements BlockStateSerializer{
 		$this->mapSimple(Blocks::GRASS_PATH(), Ids::GRASS_PATH);
 		$this->mapSimple(Blocks::GRAVEL(), Ids::GRAVEL);
 		$this->mapSimple(Blocks::HANGING_ROOTS(), Ids::HANGING_ROOTS);
+		$this->mapSimple(Blocks::AZALEA(), Ids::AZALEA);
+		$this->mapSimple(Blocks::FLOWERING_AZALEA(), Ids::FLOWERING_AZALEA);
 		$this->mapSimple(Blocks::HARDENED_CLAY(), Ids::HARDENED_CLAY);
 		$this->mapSimple(Blocks::HARDENED_GLASS(), Ids::HARD_GLASS);
 		$this->mapSimple(Blocks::HARDENED_GLASS_PANE(), Ids::HARD_GLASS_PANE);
@@ -1386,8 +1441,8 @@ final class BlockObjectToStateSerializer implements BlockStateSerializer{
 
 		$this->map(Blocks::BEEHIVE(), function(BeeHive $block) : Writer{
 			return Writer::create(Ids::BEEHIVE)
-				->writeInt(StateNames::DEPRECATED, 0)
-				->writePillarAxis($block->getAxis());
+				->writeLegacyHorizontalFacing($block->getFacing())
+				->writeInt(StateNames::HONEY_LEVEL, $block->getHoneyLevel());
 		});
 
 		$this->map(Blocks::BREWING_STAND(), function(BrewingStand $block) : Writer{

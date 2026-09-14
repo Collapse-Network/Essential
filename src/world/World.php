@@ -2560,7 +2560,7 @@ class World implements ChunkManager{
 			$player?->syncBlocks($mainBlocks);
 			return false;
 		}
-		$hand = $item->getBlock($face);
+		$hand = $item->getPlacementBlock($player, $blockReplace, $blockClicked, $face, $clickVector);
 		$hand->position($this, $blockReplace->getPosition()->x, $blockReplace->getPosition()->y, $blockReplace->getPosition()->z);
 
 		if($hand->canBePlacedAt($blockClicked, $clickVector, $face, true)){
