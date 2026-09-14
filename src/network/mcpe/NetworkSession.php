@@ -41,6 +41,7 @@ use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\StringTag;
 use pocketmine\network\mcpe\cache\ChunkCache;
+use pocketmine\network\mcpe\cache\ItemRegistryCache;
 use pocketmine\network\mcpe\compression\CompressBatchPromise;
 use pocketmine\network\mcpe\compression\Compressor;
 use pocketmine\network\mcpe\compression\DecompressionException;
@@ -65,6 +66,7 @@ use pocketmine\network\mcpe\protocol\ChunkRadiusUpdatedPacket;
 use pocketmine\network\mcpe\protocol\ClientboundCloseFormPacket;
 use pocketmine\network\mcpe\protocol\ClientboundPacket;
 use pocketmine\network\mcpe\protocol\DisconnectPacket;
+use pocketmine\network\mcpe\protocol\ItemRegistryPacket;
 use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\NetworkChunkPublisherUpdatePacket;
@@ -693,6 +695,9 @@ class NetworkSession{
 	 * @internal
 	 */
 	public static function encodePacketTimed(PacketSerializer $serializer, ClientboundPacket $packet) : string{
+		if($packet instanceof ItemRegistryPacket){
+			return ItemRegistryCache::getInstance($serializer->getProtocolId())->encode($serializer, $packet);
+		}
 		$timings = Timings::getEncodeDataPacketTimings($packet);
 		$timings->startTiming();
 		try{

@@ -28,11 +28,11 @@ namespace pocketmine\network\mcpe\handler;
 
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\cache\CraftingDataCache;
+use pocketmine\network\mcpe\cache\ItemRegistryCache;
 use pocketmine\network\mcpe\cache\StaticPacketCache;
 use pocketmine\network\mcpe\convert\LegacyBlockPaletteProvider;
 use pocketmine\network\mcpe\InventoryManager;
 use pocketmine\network\mcpe\NetworkSession;
-use pocketmine\network\mcpe\protocol\ItemRegistryPacket;
 use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\RequestChunkRadiusPacket;
@@ -126,7 +126,7 @@ class PreSpawnPacketHandler extends PacketHandler{
 
 			if($this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_21_60){
 				$this->session->getLogger()->debug("Sending items");
-				$this->session->sendDataPacket(ItemRegistryPacket::create($typeConverter->getItemTypeDictionary()->getEntries()));
+				$this->session->sendDataPacket(ItemRegistryCache::getInstance($protocolId)->getPacket($typeConverter));
 			}
 
 			$this->session->getLogger()->debug("Sending actor identifiers");
