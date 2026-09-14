@@ -1,8 +1,8 @@
 memory:
   global-limit: 0
   main-limit: 0
-  main-hard-limit: 1024
-  async-worker-hard-limit: 256
+  main-hard-limit: 2048
+  async-worker-hard-limit: 1024
   check-rate: 20
   continuous-trigger: true
   gc-manager-enabled: true
