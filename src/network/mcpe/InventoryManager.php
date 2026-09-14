@@ -58,6 +58,7 @@ use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\Enchant;
 use pocketmine\network\mcpe\protocol\types\EnchantOption as ProtocolEnchantOption;
 use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
+use pocketmine\network\mcpe\protocol\types\inventory\ContainerUIIds;
 use pocketmine\network\mcpe\protocol\types\inventory\FullContainerName;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
@@ -505,6 +506,16 @@ class InventoryManager{
 		unset($inventoryEntry->predictions[$slot]);
 	}
 
+	private function resolveContainerName(int $windowId) : FullContainerName{
+		return match($windowId){
+			ContainerIds::INVENTORY => new FullContainerName(ContainerUIIds::INVENTORY),
+			ContainerIds::ARMOR => new FullContainerName(ContainerUIIds::ARMOR),
+			ContainerIds::OFFHAND => new FullContainerName(ContainerUIIds::OFFHAND),
+			ContainerIds::HOTBAR => new FullContainerName(ContainerUIIds::HOTBAR),
+			default => new FullContainerName(ContainerUIIds::DYNAMIC, $this->lastInventoryNetworkId),
+		};
+	}
+
 	private function sendInventorySlotPackets(int $windowId, int $netSlot, ItemStackWrapper $itemStackWrapper) : void{
 		/*
 		 * TODO: HACK!
@@ -515,7 +526,7 @@ class InventoryManager{
 		 * The network cost of doing this is fortunately minimal, as an air itemstack is only 1 byte.
 		 */
 		$useCompactContainerDescriptor = $this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_26_20;
-		$containerName = $useCompactContainerDescriptor ? null : new FullContainerName($this->lastInventoryNetworkId);
+		$containerName = $useCompactContainerDescriptor ? null : $this->resolveContainerName($windowId);
 		$storage = $useCompactContainerDescriptor ? null : new ItemStackWrapper(0, ItemStack::null());
 
 		if($itemStackWrapper->getStackId() !== 0){
@@ -551,7 +562,7 @@ class InventoryManager{
 		 * cost performance. Instead, clear the slot(s) first, then send the new item(s).
 		 * The network cost of doing this is fortunately minimal, as an air itemstack is only 1 byte.
 		 */
-		$containerName = new FullContainerName($this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_26_20 ? 0 : $this->lastInventoryNetworkId);
+		$containerName = $this->resolveContainerName($windowId);
 		$this->session->sendDataPacket(InventoryContentPacket::create(
 			$windowId,
 			array_fill_keys(array_keys($itemStackWrappers), new ItemStackWrapper(0, ItemStack::null())),
