@@ -310,6 +310,12 @@ class Server{
 	/** @var array<string, EntityEventBroadcaster> */
 	private array $entityEventBroadcasters = [];
 
+	/**
+	 * @var \Closure[]|ObjectSet
+	 * @phpstan-var ObjectSet<\Closure(\Throwable) : void>
+	 */
+	private ObjectSet $crashHooks;
+
 	public function getName() : string{
 		return VersionInfo::NAME;
 	}
@@ -825,6 +831,7 @@ class Server{
 			throw new \LogicException("Only one server instance can exist at once");
 		}
 		self::$instance = $this;
+		$this->crashHooks = new ObjectSet();
 		$this->startTime = microtime(true);
 		$this->tickAverage = array_fill(0, self::TARGET_TICKS_PER_SECOND, self::TARGET_TICKS_PER_SECOND);
 		$this->useAverage = array_fill(0, self::TARGET_TICKS_PER_SECOND, 0);
@@ -1573,6 +1580,17 @@ class Server{
 	}
 
 	/**
+	 * Closures called with the exception that is about to crash the server, before the crashdump is written.
+	 * Hooks must not throw: failures are logged and ignored so they cannot prevent the crashdump.
+	 *
+	 * @return \Closure[]|ObjectSet
+	 * @phpstan-return ObjectSet<\Closure(\Throwable) : void>
+	 */
+	public function getCrashHooks() : ObjectSet{
+		return $this->crashHooks;
+	}
+
+	/**
 	 * @param mixed[][]|null $trace
 	 * @phpstan-param list<array<string, mixed>>|null $trace
 	 */
@@ -1617,6 +1635,14 @@ class Server{
 			"trace" => $printableTrace,
 			"thread" => $thread
 		];
+
+		foreach($this->crashHooks as $hook){
+			try{
+				$hook($e);
+			}catch(\Throwable $hookError){
+				$this->logger->logException($hookError);
+			}
+		}
 
 		global $lastExceptionError, $lastError;
 		$lastExceptionError = $lastError;
