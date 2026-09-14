@@ -26,10 +26,14 @@ declare(strict_types=1);
 
 namespace pocketmine\item;
 
+use pocketmine\block\Campfire;
+use pocketmine\block\Leaves;
 use pocketmine\block\Liquid;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Living;
 use pocketmine\math\Vector3;
 use pocketmine\world\sound\EndermanTeleportSound;
+use pocketmine\world\World;
 use function min;
 use function mt_rand;
 
@@ -79,6 +83,10 @@ class ChorusFruit extends Food{
 				continue;
 			}
 
+			if(self::isNearTeleportBlocker($world, $x, $y + 1, $z)){
+				continue;
+			}
+
 			//Sounds are broadcasted at both source and destination
 			$world->addSound($origin, new EndermanTeleportSound());
 			$consumer->teleport($target = new Vector3($x + 0.5, $y + 1, $z + 0.5));
@@ -86,6 +94,26 @@ class ChorusFruit extends Food{
 
 			break;
 		}
+	}
+
+	private static function isNearTeleportBlocker(World $world, int $x, int $y, int $z) : bool{
+		for($dx = -1; $dx <= 1; ++$dx){
+			for($dy = -1; $dy <= 1; ++$dy){
+				for($dz = -1; $dz <= 1; ++$dz){
+					$block = $world->getBlockAt($x + $dx, $y + $dy, $z + $dz);
+					if(
+						$block instanceof Leaves ||
+						$block instanceof Campfire ||
+						$block->hasSameTypeId(VanillaBlocks::MOSSY_COBBLESTONE_SLAB()) ||
+						$block->hasSameTypeId(VanillaBlocks::MOSS_BLOCK())
+					){
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	public function getCooldownTicks() : int{
