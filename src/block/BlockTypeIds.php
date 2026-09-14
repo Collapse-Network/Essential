@@ -799,7 +799,7 @@ final class BlockTypeIds{
 	public const OBSERVER = 10765;
 	public const BEEHIVE = 10766;
 
-	public const FIRST_UNUSED_BLOCK_ID = 10762;
+	public const FIRST_UNUSED_BLOCK_ID = 10767;
 
 	private static int $nextDynamicId = self::FIRST_UNUSED_BLOCK_ID;
 
