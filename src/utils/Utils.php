@@ -382,7 +382,7 @@ final class Utils{
 		return -1;
 	}
 
-	private static function printableExceptionMessage(\Throwable $e) : string{
+	public static function printableExceptionMessage(\Throwable $e) : string{
 		$errstr = preg_replace('/\s+/', ' ', trim($e->getMessage()));
 
 		$errno = $e->getCode();
