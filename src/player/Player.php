@@ -879,13 +879,18 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			$this->usedChunks[$index] = UsedChunkStatus::REQUESTED_GENERATION;
 			$this->activeChunkGenerationRequests[$index] = true;
 			unset($this->loadQueue[$index]);
+			Timings::$playerChunkSendRegister->startTiming();
 			$world->registerChunkLoader($this->chunkLoader, (int)$X, (int)$Z, true);
 			$world->registerChunkListener($this, (int)$X, (int)$Z);
 			if(isset($this->tickingChunks[$index])){
 				$world->registerTickingChunk($this->chunkTicker, (int)$X, (int)$Z);
 			}
+			Timings::$playerChunkSendRegister->stopTiming();
 
-			$world->requestChunkPopulation((int)$X, (int)$Z, $this->chunkLoader)->onCompletion(
+			Timings::$playerChunkSendPopulationRequest->startTiming();
+			$populationPromise = $world->requestChunkPopulation((int)$X, (int)$Z, $this->chunkLoader);
+			Timings::$playerChunkSendPopulationRequest->stopTiming();
+			$populationPromise->onCompletion(
 				function() use ($X, $Z, $index, $world) : void{
 					if(!$this->isConnected() || !isset($this->usedChunks[$index]) || $world !== $this->getWorld()){
 						return;
@@ -900,17 +905,22 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 					$this->usedChunks[$index] = UsedChunkStatus::REQUESTED_SENDING;
 
 					$this->getNetworkSession()->startUsingChunk((int)$X, (int)$Z, function() use ($X, $Z, $index) : void{
-						$this->usedChunks[$index] = UsedChunkStatus::SENT;
-						if($this->spawnChunkLoadCount === -1){
-							$this->spawnEntitiesOnChunk((int)$X, (int)$Z);
-						}elseif($this->spawnChunkLoadCount++ === $this->spawnThreshold){
-							$this->spawnChunkLoadCount = -1;
+						Timings::$playerChunkSendFinalize->startTiming();
+						try{
+							$this->usedChunks[$index] = UsedChunkStatus::SENT;
+							if($this->spawnChunkLoadCount === -1){
+								$this->spawnEntitiesOnChunk((int)$X, (int)$Z);
+							}elseif($this->spawnChunkLoadCount++ === $this->spawnThreshold){
+								$this->spawnChunkLoadCount = -1;
 
-							$this->spawnEntitiesOnAllChunks();
+								$this->spawnEntitiesOnAllChunks();
 
-							$this->getNetworkSession()->notifyTerrainReady();
+								$this->getNetworkSession()->notifyTerrainReady();
+							}
+							(new PlayerPostChunkSendEvent($this, (int)$X, (int)$Z))->call();
+						}finally{
+							Timings::$playerChunkSendFinalize->stopTiming();
 						}
-						(new PlayerPostChunkSendEvent($this, (int)$X, (int)$Z))->call();
 					});
 				},
 				static function() : void{

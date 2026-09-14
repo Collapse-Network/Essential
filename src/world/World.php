@@ -1133,9 +1133,12 @@ class World implements ChunkManager{
 		$this->tickChunks();
 		$this->timings->randomChunkUpdates->stopTiming();
 
+		$this->timings->lightUpdateExecute->startTiming();
 		$this->executeQueuedLightUpdates();
+		$this->timings->lightUpdateExecute->stopTiming();
 
 		if(count($this->changedBlocks) > 0){
+			$this->timings->blockChangeBroadcast->startTiming();
 			if(count($this->players) > 0){
 				foreach($this->changedBlocks as $index => $blocks){
 					if(count($blocks) === 0){ //blocks can be set normally and then later re-set with direct send
@@ -1161,12 +1164,14 @@ class World implements ChunkManager{
 
 			$this->changedBlocks = [];
 
+			$this->timings->blockChangeBroadcast->stopTiming();
 		}
 
 		if($this->sleepTicks > 0 && --$this->sleepTicks <= 0){
 			$this->checkSleep();
 		}
 
+		$this->timings->packetBufferBroadcast->startTiming();
 		foreach($this->packetBuffersByChunkTypeConverter as $index => $entries){
 			World::getXZ($index, $chunkX, $chunkZ);
 			TypeConverter::broadcastByTypeConverter($this->getChunkPlayers($chunkX, $chunkZ), function(TypeConverter $typeConverter) use ($index, $entries) : array{
@@ -1188,6 +1193,7 @@ class World implements ChunkManager{
 
 		$this->packetBuffersByChunk = [];
 		$this->packetBuffersByChunkTypeConverter = [];
+		$this->timings->packetBufferBroadcast->stopTiming();
 	}
 
 	public function checkSleep() : void{
@@ -1486,7 +1492,10 @@ class World implements ChunkManager{
 
 			foreach($this->recheckTickingChunks as $hash => $_){
 				World::getXZ($hash, $chunkX, $chunkZ);
-				if($this->isChunkTickable($chunkX, $chunkZ, $chunkTickableCache)){
+				$this->timings->chunkTickableCheck->startTiming();
+				$tickable = $this->isChunkTickable($chunkX, $chunkZ, $chunkTickableCache);
+				$this->timings->chunkTickableCheck->stopTiming();
+				if($tickable){
 					$this->validTickingChunks[$hash] = $hash;
 				}
 				unset($this->recheckTickingChunks[$hash]);
@@ -1501,7 +1510,9 @@ class World implements ChunkManager{
 		foreach($this->validTickingChunks as $index => $_){
 			World::getXZ($index, $chunkX, $chunkZ);
 
+			$this->timings->chunkTick->startTiming();
 			$this->tickChunk($chunkX, $chunkZ);
+			$this->timings->chunkTick->stopTiming();
 		}
 	}
 
@@ -3234,6 +3245,7 @@ class World implements ChunkManager{
 		}
 
 		$chunkData = $loadedChunkData->getData();
+		$this->timings->syncChunkLoadInstantiate->startTiming();
 		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
 		if(!$loadedChunkData->isUpgraded()){
 			$chunk->clearTerrainDirtyFlags();
@@ -3245,20 +3257,25 @@ class World implements ChunkManager{
 		$this->blockCacheSize -= count($this->blockCache[$chunkHash] ?? []);
 		unset($this->blockCache[$chunkHash]);
 		unset($this->blockCollisionBoxCache[$chunkHash]);
+		$this->timings->syncChunkLoadInstantiate->stopTiming();
 
 		$this->initChunk($x, $z, $chunkData);
 
 		if(ChunkLoadEvent::hasHandlers()){
+			$this->timings->syncChunkLoadEvent->startTiming();
 			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
+			$this->timings->syncChunkLoadEvent->stopTiming();
 		}
 
 		if(!$this->isChunkInUse($x, $z)){
 			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
 			$this->unloadChunkRequest($x, $z);
 		}
+		$this->timings->syncChunkLoadListeners->startTiming();
 		foreach($this->getChunkListeners($x, $z) as $listener){
 			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
 		}
+		$this->timings->syncChunkLoadListeners->stopTiming();
 		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
 
 		$this->timings->syncChunkLoad->stopTiming();

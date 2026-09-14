@@ -58,11 +58,17 @@ abstract class Timings{
 	public static TimingsHandler $playerNetworkSendEncrypt;
 	public static TimingsHandler $playerNetworkSendInventorySync;
 	public static TimingsHandler $playerNetworkSendPreSpawnGameData;
+	public static TimingsHandler $playerNetworkSendFlushBatch;
+	public static TimingsHandler $playerNetworkSendFlushPrepare;
+	public static TimingsHandler $playerNetworkSendFlushTransport;
 	public static TimingsHandler $playerNetworkReceive;
 	public static TimingsHandler $playerNetworkReceiveDecompress;
 	public static TimingsHandler $playerNetworkReceiveDecrypt;
 	public static TimingsHandler $playerChunkOrder;
 	public static TimingsHandler $playerChunkSend;
+	public static TimingsHandler $playerChunkSendRegister;
+	public static TimingsHandler $playerChunkSendPopulationRequest;
+	public static TimingsHandler $playerChunkSendFinalize;
 	public static TimingsHandler $connection;
 	public static TimingsHandler $scheduler;
 	public static TimingsHandler $serverCommand;
@@ -160,6 +166,9 @@ abstract class Timings{
 		self::$playerNetworkSendEncrypt = new TimingsHandler("Player Network Send - Encryption", self::$playerNetworkSend);
 		self::$playerNetworkSendInventorySync = new TimingsHandler("Player Network Send - Inventory Sync", self::$playerNetworkSend);
 		self::$playerNetworkSendPreSpawnGameData = new TimingsHandler("Player Network Send - Pre-Spawn Game Data", self::$playerNetworkSend);
+		self::$playerNetworkSendFlushBatch = new TimingsHandler("Player Network Send - Flush - Batch Encode", self::$playerNetworkSend);
+		self::$playerNetworkSendFlushPrepare = new TimingsHandler("Player Network Send - Flush - Prepare Batch", self::$playerNetworkSend);
+		self::$playerNetworkSendFlushTransport = new TimingsHandler("Player Network Send - Flush - Transport Queue", self::$playerNetworkSend);
 
 		self::$playerNetworkReceive = new TimingsHandler("Player Network Receive", self::$connection);
 		self::$playerNetworkReceiveDecompress = new TimingsHandler("Player Network Receive - Decompression", self::$playerNetworkReceive);
@@ -170,6 +179,9 @@ abstract class Timings{
 		self::$playerMove = new TimingsHandler("Player Movement");
 		self::$playerChunkOrder = new TimingsHandler("Player Order Chunks");
 		self::$playerChunkSend = new TimingsHandler("Player Network Send - Chunks", self::$playerNetworkSend);
+		self::$playerChunkSendRegister = new TimingsHandler("Player Network Send - Chunks - Register", self::$playerChunkSend);
+		self::$playerChunkSendPopulationRequest = new TimingsHandler("Player Network Send - Chunks - Population Request", self::$playerChunkSend);
+		self::$playerChunkSendFinalize = new TimingsHandler("Player Network Send - Chunks - On Sent (Spawn/Event)", self::$playerChunkSend);
 		self::$scheduler = new TimingsHandler("Scheduler");
 		self::$serverCommand = new TimingsHandler("Server Command");
 		self::$permissibleCalculation = new TimingsHandler("Permissible Calculation");

@@ -52,6 +52,18 @@ class WorldTimings{
 	public TimingsHandler $syncChunkLoadFixInvalidBlocks;
 	public TimingsHandler $syncChunkLoadEntities;
 	public TimingsHandler $syncChunkLoadTileEntities;
+	public TimingsHandler $syncChunkLoadInstantiate;
+	public TimingsHandler $syncChunkLoadEvent;
+	public TimingsHandler $syncChunkLoadListeners;
+	public TimingsHandler $syncChunkLoadCacheDeserialize;
+
+	public TimingsHandler $setChunk;
+	public TimingsHandler $chunkTick;
+	public TimingsHandler $chunkTickableCheck;
+
+	public TimingsHandler $lightUpdateExecute;
+	public TimingsHandler $blockChangeBroadcast;
+	public TimingsHandler $packetBufferBroadcast;
 
 	public TimingsHandler $syncDataSave;
 	public TimingsHandler $syncChunkSave;
@@ -96,6 +108,18 @@ class WorldTimings{
 		$this->syncChunkLoadFixInvalidBlocks = self::newTimer($name, "Chunk Load - Fix Invalid Blocks");
 		$this->syncChunkLoadEntities = self::newTimer($name, "Chunk Load - Entities");
 		$this->syncChunkLoadTileEntities = self::newTimer($name, "Chunk Load - Block Entities");
+		$this->syncChunkLoadInstantiate = self::newTimer($name, "Chunk Load - Instantiate");
+		$this->syncChunkLoadEvent = self::newTimer($name, "Chunk Load - Event Dispatch");
+		$this->syncChunkLoadListeners = self::newTimer($name, "Chunk Load - Listeners");
+		$this->syncChunkLoadCacheDeserialize = self::newTimer($name, "Chunk Load - Cache Deserialize");
+
+		$this->setChunk = self::newTimer($name, "Set Chunk");
+		$this->chunkTick = self::newTimer($name, "Chunk Tick");
+		$this->chunkTickableCheck = self::newTimer($name, "Chunk Tickable Check");
+
+		$this->lightUpdateExecute = self::newTimer($name, "Light Updates - Execute");
+		$this->blockChangeBroadcast = self::newTimer($name, "Block Change Broadcast");
+		$this->packetBufferBroadcast = self::newTimer($name, "Packet Buffer Broadcast");
 
 		$this->syncDataSave = self::newTimer($name, "Data Save");
 		$this->syncChunkSave = self::newTimer($name, "Chunk Save");

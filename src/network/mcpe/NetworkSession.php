@@ -719,11 +719,15 @@ class NetworkSession{
 					$syncMode = false;
 				}
 
+				Timings::$playerNetworkSendFlushBatch->startTiming();
 				$stream = new BinaryStream();
 				PacketBatch::encodeRaw($stream, $this->sendBuffer);
+				Timings::$playerNetworkSendFlushBatch->stopTiming();
 
 				if($this->enableCompression){
+					Timings::$playerNetworkSendFlushPrepare->startTiming();
 					$batch = $this->server->prepareBatch($stream->getBuffer(), $this->getProtocolId(), $this->compressor, $syncMode, Timings::$playerNetworkSendCompressSessionBuffer);
+					Timings::$playerNetworkSendFlushPrepare->stopTiming();
 				}else{
 					$batch = $stream->getBuffer();
 				}
@@ -732,7 +736,9 @@ class NetworkSession{
 				$this->sendBufferAckPromises = [];
 				//these packets were already potentially buffered for up to 50ms - make sure the transport layer doesn't
 				//delay them any longer
+				Timings::$playerNetworkSendFlushTransport->startTiming();
 				$this->queueCompressedNoGamePacketFlush($batch, networkFlush: true, ackPromises: $ackPromises);
+				Timings::$playerNetworkSendFlushTransport->stopTiming();
 			}finally{
 				Timings::$playerNetworkSend->stopTiming();
 			}
