@@ -400,6 +400,9 @@ class TypeConverter{
 		/** @var Player[][] $converterRecipients */
 		$converterRecipients = [];
 		foreach($players as $recipient){
+			if(!$recipient->isConnected()){
+				continue;
+			}
 			$typeConverter = $recipient->getNetworkSession()->getTypeConverter();
 			$typeConverters[spl_object_id($typeConverter)] = $typeConverter;
 			$converterRecipients[spl_object_id($typeConverter)][spl_object_id($recipient)] = $recipient;

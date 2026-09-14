@@ -85,6 +85,9 @@ final class NetworkBroadcastUtils{
 		$broadcasterTargets = [];
 
 		foreach($recipients as $recipient){
+			if(!$recipient->isConnected()){
+				continue;
+			}
 			$session = $recipient->getNetworkSession();
 			$broadcaster = $session->getEntityEventBroadcaster();
 			$uniqueBroadcasters[spl_object_id($broadcaster)] = $broadcaster;
