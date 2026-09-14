@@ -142,6 +142,9 @@ class Door extends Transparent{
 	}
 
 	public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+		if($this->getTypeId() === BlockTypeIds::IRON_DOOR){
+			return true;
+		}
 		$this->open = !$this->open;
 
 		$other = $this->getSide($this->top ? Facing::DOWN : Facing::UP);
