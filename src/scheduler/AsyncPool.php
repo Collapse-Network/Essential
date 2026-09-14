@@ -39,6 +39,7 @@ use function array_map;
 use function assert;
 use function count;
 use function get_class;
+use function hrtime;
 use function spl_object_id;
 use function time;
 use const PHP_INT_MAX;
@@ -49,6 +50,7 @@ use const PHP_INT_MAX;
  */
 class AsyncPool{
 	private const WORKER_START_OPTIONS = NativeThread::INHERIT_INI | NativeThread::INHERIT_COMMENTS;
+	private const COMPLETION_BUDGET_NS = 3_000_000;
 
 	/**
 	 * @var AsyncPoolWorkerEntry[]
@@ -127,7 +129,7 @@ class AsyncPool{
 	private function getWorker(int $workerId) : AsyncPoolWorkerEntry{
 		if(!isset($this->workers[$workerId])){
 			$sleeperEntry = $this->eventLoop->addNotifier(function() use ($workerId) : void{
-				$this->collectTasksFromWorker($workerId);
+				$this->collectTasksFromWorker($workerId, hrtime(true) + self::COMPLETION_BUDGET_NS);
 			});
 			$this->workers[$workerId] = new AsyncPoolWorkerEntry(new AsyncWorker($this->logger, $workerId, $this->workerMemoryLimit, $sleeperEntry), $sleeperEntry->getNotifierId());
 			$this->workers[$workerId]->worker->setClassLoaders([$this->classLoader]);
@@ -239,9 +241,10 @@ class AsyncPool{
 	 * @throws \ReflectionException
 	 * @return bool whether there are tasks left to be collected
 	 */
-	public function collectTasks() : bool{
+	public function collectTasks(?int $deadlineNs = null) : bool{
+		$deadlineNs ??= hrtime(true) + self::COMPLETION_BUDGET_NS;
 		foreach($this->workers as $workerId => $entry){
-			$this->collectTasksFromWorker($workerId);
+			$this->collectTasksFromWorker($workerId, $deadlineNs);
 		}
 
 		//we check this in a second loop, because task collection could have caused new tasks to be added to the queues
@@ -253,7 +256,7 @@ class AsyncPool{
 		return false;
 	}
 
-	public function collectTasksFromWorker(int $worker) : bool{
+	public function collectTasksFromWorker(int $worker, ?int $deadlineNs = null) : bool{
 		if(!isset($this->workers[$worker])){
 			throw new \InvalidArgumentException("No such worker $worker");
 		}
@@ -287,6 +290,11 @@ class AsyncPool{
 				$this->checkTaskProgressUpdates($task);
 				$more = true;
 				break; //current task is still running, skip to next worker
+			}
+
+			if($deadlineNs !== null && hrtime(true) >= $deadlineNs){
+				$more = true;
+				break;
 			}
 		}
 		$this->workers[$worker]->worker->collect();
