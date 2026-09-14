@@ -792,6 +792,13 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 
 	protected function setPosition(Vector3 $pos) : bool{
 		$oldWorld = $this->location->isValid() ? $this->location->getWorld() : null;
+		$targetWorld = $pos instanceof Position && $pos->isValid() ? $pos->getWorld() : $oldWorld;
+		if($oldWorld !== null && $targetWorld !== null && $targetWorld !== $oldWorld && $targetWorld->isLoaded()){
+			foreach($this->usedChunks as $index => $status){
+				World::getXZ($index, $X, $Z);
+				$this->getNetworkSession()->stopUsingChunk($X, $Z, true);
+			}
+		}
 		if(parent::setPosition($pos)){
 			$newWorld = $this->getWorld();
 			if($oldWorld !== $newWorld){
